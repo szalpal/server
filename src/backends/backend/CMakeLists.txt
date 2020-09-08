@@ -73,3 +73,9 @@ endif() # TRITON_ENABLE_TENSORFLOW
 if(${TRITON_ENABLE_PYTHON})
   add_subdirectory(python src/backends/backend/python)
 endif() # TRITON_ENABLE_PYTHON
+if(${TRITON_ENABLE_DALI})
+  if(NOT ${TRITON_ENABLE_GPU})
+    message(ERROR "DALI requires GPU to be enabled")
+  endif()
+  add_subdirectory(dali src/backends/backend/dali)
+endif() # TRITON_ENABLE_DALI

@@ -19,8 +19,8 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-cmake_minimum_required(VERSION 3.13)
-project(DaliBackend LANGUAGES CUDA C CXX)
+cmake_minimum_required(VERSION 3.10)
+project(DaliBackend LANGUAGES CXX CUDA)
 
 include(cmake/Utils.cmake)
 
@@ -31,11 +31,6 @@ endif ()
 find_package(CUDA REQUIRED)
 
 get_dali_paths(DALI_INCLUDE_DIR DALI_LIB_DIR DALI_LIBRARIES)
-
-set(TRITON_INCLUDE_DIRS ${DaliBackend_SOURCE_DIR}/extern/triton/custom-backend-sdk/include
-                        ${DaliBackend_SOURCE_DIR}/extern/triton/custom-backend-sdk/include/src)
-set(TRITON_LIB_DIR ${DaliBackend_SOURCE_DIR}/extern/triton/custom-backend-sdk/lib)
-set(TRITON_LIBS custombackend)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -55,7 +50,5 @@ add_compile_options(-Wall -Wno-unused-variable -Wno-unused-function -fno-strict-
 
 message(STATUS "Build configuration: " ${CMAKE_BUILD_TYPE})
 
-
-add_subdirectory(extern/Catch2)
-
+#add_subdirectory(extern/Catch2)
 add_subdirectory(dali_backend)

@@ -22,9 +22,9 @@
 #ifndef DALI_BACKEND_DALI_BACKEND_H_
 #define DALI_BACKEND_DALI_BACKEND_H_
 
-#include <core/model_config.h>
-#include <core/model_config.pb.h>
-#include <custom/sdk/custom_instance.h>
+#include <src/core/model_config.h>
+#include <src/core/model_config.pb.h>
+#include <src/custom/sdk/custom_instance.h>
 #include <string>
 #include <memory>
 #include <vector>
@@ -37,15 +37,16 @@
 
 namespace triton { namespace backend { namespace dali {
 
-using nvidia::inferenceserver::DataType;
+using inference::DataType;
+using inference::ModelConfig;
 using nvidia::inferenceserver::GetDataTypeByteSize;
 
 const std::string DALI_PIPELINE_KEY = "dali_pipeline";  // NOLINT
 
 class DaliBackend : public nvidia::inferenceserver::custom::CustomInstance {
  public:
-  DaliBackend(const std::string &instance_name, const nvidia::inferenceserver::ModelConfig &config,
-              const int gpu_device, const std::string &dali_pipeline_path);
+  DaliBackend(const std::string &instance_name, const ModelConfig &config, const int gpu_device,
+              const std::string &dali_pipeline_path);
 
 
   ~DaliBackend() override = default;
@@ -62,7 +63,8 @@ class DaliBackend : public nvidia::inferenceserver::custom::CustomInstance {
   std::vector<DaliExecutor::InputDscr>
   ReadInputs(CustomPayload &payload, CustomGetNextInputV2Fn_t input_fn, uint32_t batch_size);
 
-  ::dali::span<char> ReserveInputBuffer(const std::string &name, size_t n_elements, DataType type);
+  ::dali::span<char>
+  ReserveInputBuffer(const std::string &name, size_t n_elements, inference::DataType type);
 
   std::vector<std::pair<void *, device_type_t>>
   FetchOutputBuffers(CustomPayload &payload, CustomGetOutputV2Fn_t output_fn,

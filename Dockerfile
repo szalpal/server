@@ -142,6 +142,30 @@ FROM ${TENSORFLOW1_IMAGE} AS tritonserver_tf1
 FROM ${TENSORFLOW2_IMAGE} AS tritonserver_tf2
 
 ############################################################################
+## DALI stage: Unpack DALI wheel to grab DALI libraries
+############################################################################
+FROM ${BASE_IMAGE} AS tritonserver_dali
+RUN apt-get update && \
+    apt-get install -y software-properties-common
+
+RUN add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y  \
+              zip              \
+              wget             \
+              unzip            \
+              python3.8        \
+              python3-pip
+
+# pip version in apt packages is ancient - we need to update it
+RUN pip3 install -U pip
+
+RUN pip download -d /dali_whl --extra-index-url https://developer.download.nvidia.com/compute/redist nvidia-dali-cuda110 && \
+    mkdir -p /dali && unzip /dali_whl/nvidia_dali* -d /dali
+
+
+
+############################################################################
 ## Build stage: Build inference server
 ############################################################################
 FROM ${BASE_IMAGE} AS tritonserver_build
@@ -160,6 +184,7 @@ RUN apt-get update && \
             build-essential \
             cmake \
             git \
+            zip unzip \
             libgoogle-glog0v5 \
             libre2-dev \
             libssl-dev \
@@ -184,6 +209,9 @@ RUN apt-get update && \
         exit 1; \
     fi && \
     rm -rf /var/lib/apt/lists/*
+
+# pip version from package manager is ancient. We need to upgrade it
+RUN pip3 install -U pip
 
 # Install dependencies for protobuf code generation in Python
 RUN pip3 install --upgrade wheel setuptools && \
@@ -313,6 +341,9 @@ COPY --from=tritonserver_onnx /workspace/build/Release/libcustom_op_library.so \
 COPY --from=tritonserver_onnx /workspace/build/Release/testdata/custom_op_library/custom_op_test.onnx \
     /workspace/qa/L0_custom_ops/
 
+# DALI backend needs DALI wheel to be installed. Installing latest DALI release
+RUN pip install --extra-index-url https://developer.download.nvidia.com/compute/redist nvidia-dali-cuda110
+
 # Build the server.
 #
 # - Need to find CUDA stubs if they are available since some backends
@@ -343,6 +374,7 @@ RUN LIBCUDA_FOUND=$(ldconfig -p | grep -v compat | awk '{print $1}' | grep libcu
                   -DTRITON_ENABLE_ONNXRUNTIME_OPENVINO=ON \
                   -DTRITON_ENABLE_PYTORCH=ON \
                   -DTRITON_ENABLE_PYTHON=ON \
+                  -DTRITON_ENABLE_DALI=ON \
                   -DTRITON_ENABLE_ENSEMBLE=ON \
                   -DTRITON_ONNXRUNTIME_INCLUDE_PATHS="/opt/tritonserver/include/onnxruntime" \
                   -DTRITON_PYTORCH_INCLUDE_PATHS="/opt/tritonserver/include/torch;/opt/tritonserver/include/torch/torch/csrc/api/include;/opt/tritonserver/include/torchvision;/usr/include/python3.6" \
@@ -443,6 +475,9 @@ COPY --chown=1000:1000 --from=tritonserver_build /opt/tritonserver/bin/tritonser
 COPY --chown=1000:1000 --from=tritonserver_build /opt/tritonserver/lib lib
 COPY --chown=1000:1000 --from=tritonserver_build /opt/tritonserver/backends backends
 COPY --chown=1000:1000 --from=tritonserver_build /opt/tritonserver/include/tritonserver/tritonserver.h include/
+
+COPY --chown=1000:1000 --from=tritonserver_dali /dali/nvidia/dali/.libs lib/.libs
+COPY --chown=1000:1000 --from=tritonserver_dali /dali/nvidia/dali/*.so lib/
 
 
 # Get ONNX version supported

@@ -19,31 +19,34 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-add_subdirectory(dali_executor)
-
 configure_file(libdali_backend.ldscript libdali_backend.ldscript COPYONLY)
+
+link_directories(${DALI_LIB_DIR}) # No target_link_directories in cmake 3.10
 
 add_library(
         dali_backend
         SHARED
         dali_backend.cc
-        utils/logging.cc
+        dali_executor/dali_executor.cc
+        dali_executor/dali_pipeline.cc
+        dali_executor/pipeline_group.cc
+        $<TARGET_OBJECTS:backend-library>
 )
 
-target_link_libraries(dali_backend PRIVATE dali_executor)
+target_include_directories(
+        dali_backend
+        PRIVATE
+        ${DaliBackend_SOURCE_DIR}/dali_backend
+        ${CUDA_INCLUDE_DIRS}
+        ${DALI_INCLUDE_DIR}
+)
 
-target_include_directories(dali_backend 
-                           PRIVATE ${DaliBackend_SOURCE_DIR}/dali_backend
-                           ${TRITON_INCLUDE_DIRS})
-
-target_link_directories(dali_backend PUBLIC
-        ${TRITON_LIB_DIR}
-        ${DALI_LIB_DIR})
-
-target_link_libraries(dali_backend PUBLIC
-        ${TRITON_LIBS}
+target_link_libraries(
+        dali_backend
+        PUBLIC
         ${CUDA_LIBRARIES}
-        ${DALI_LIBRARIES})
+        ${DALI_LIBRARIES}
+)
 
 set_target_properties(
         dali_backend
@@ -51,3 +54,7 @@ set_target_properties(
         LINK_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libdali_backend.ldscript
         LINK_FLAGS "-Wl,--version-script libdali_backend.ldscript"
 )
+
+#TODO figure out testing
+#add_executable(unittests main.test.cc executor.test.cc)
+#target_link_libraries(unittests Catch2::Catch2 dali_executor)

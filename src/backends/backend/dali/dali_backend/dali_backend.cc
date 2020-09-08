@@ -20,7 +20,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "dali_backend.h"  // NOLINT
-#include <custom/sdk/error_codes.h>
+#include <src/custom/sdk/error_codes.h>
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -47,7 +47,7 @@ extern "C" DLL_PUBLIC uint32_t CustomVersion() {
 
 
 int CustomInstance::Create(CustomInstance **instance, const std::string &name,
-                           const ModelConfig &model_config,
+                           const inference::ModelConfig &model_config,
                            int gpu_device, const CustomInitializeData *data) {
   std::stringstream dali_pipeline_path;
   const char sep = '/';
@@ -206,7 +206,7 @@ DaliBackend::FetchOutputBuffers(CustomPayload &payload, CustomGetOutputV2Fn_t ou
 
 
 DaliBackend::DaliBackend(const std::string &instance_name,
-                         const nvidia::inferenceserver::ModelConfig &config, const int gpu_device,
+                         const ModelConfig &config, const int gpu_device,
                          const std::string &dali_pipeline_path)
         : CustomInstance(instance_name, config, gpu_device),
           kDaliErrorCode_(RegisterError(kDaliErrorMsg_)),
